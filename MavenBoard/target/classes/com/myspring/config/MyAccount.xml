@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.myspring.config.MyAccount">
+
+	<!-- write -->
+	<insert id="writeBoard" parameterType="dto">
+		insert into
+		springboard(seq,title,content,writer,regdate,hitcount,password,groups,levels,steps)
+		values(board_seq.nextval,#{title},#{content},#{writer},sysdate,0,#{password},board_seq.nextval,0,0)
+	</insert>
+
+	<!-- reply -->
+	<insert id="replyBoard" parameterType="dto">
+		insert into
+		springboard(seq,title,content,writer,regdate,hitcount,password,groups,levels,steps)
+		values(board_seq.nextval,#{title},#{content},#{writer},sysdate,0,#{password},#{groups},#{levels}+1,#{steps}+1)
+	</insert>
+
+	<!-- steps -->
+	<update id="stepsBoard" parameterType="dto">
+	<![CDATA[
+		update springboard
+		set steps=steps+1 where groups=#{groups} and steps>#{steps}
+		]]>
+	</update>
+
+	<!-- list -->
+	<select id="listBoard" parameterType="map" resultType="dto">
+		select * from (select rownum rn, aa.* from (select * from springboard
+		<where>
+			<if test="word!=null and field=='title'">
+				title like '%${word}%'
+			</if>
+			<if test="word!=null and field=='content'">
+				content like '%${word}%'
+			</if>
+		</where>
+		<![CDATA[
+		order by groups desc, steps asc)aa) where rn >=#{startRow} and rn <=#{endRow}
+		]]>
+	</select>
+
+	<!-- count -->
+	<select id="countBoard" parameterType="map" resultType="Integer">
+		select count(*) from
+		springboard
+		<where>
+			<if test="word!=null and field=='title'">
+				title like '%${word}%'
+			</if>
+			<if test="word!=null and field=='content'">
+				content like '%${word}%'
+			</if>
+		</where>
+	</select>
+
+	<!-- detail -->
+	<select id="detailBoard" parameterType="Integer"
+		resultType="dto">
+		select *
+		from springboard
+		where seq=#{seq}
+	</select>
+
+	<!-- hit -->
+	<update id="hit" parameterType="Integer">
+		update springboard
+		set
+		hitcount=hitcount+1
+		where seq=#{seq}
+	</update>
+
+	<!-- update -->
+	<update id="updateBoard" parameterType="dto">
+		update springboard
+		set
+		writer=#{writer}, title=#{title}, content=#{content},
+		password=#{password}
+		where seq=#{seq}
+	</update>
+
+	<!-- delete -->
+	<delete id="deleteBoard" parameterType="Integer">
+		delete springboard
+		where
+		seq=#{seq}
+	</delete>
+
+	<!-- passcheck -->
+	<select id="passcheck" parameterType="map" resultType="Integer">
+		select
+		count(*)
+		from springboard
+		where seq=#{seq} and password=#{password}
+	</select>
+	
+	<!-- insertComment -->
+	<insert id="insertComment" parameterType="cdto">
+		insert into
+		springcomment(cnum,name,created,msg,bnum)
+		values(comment_seq.nextval,#{name},sysdate,#{msg},#{bnum})
+	</insert>
+	
+	<!-- listComment -->
+	<select id="listComment" parameterType="Integer" resultType="cdto">
+		select *
+		from springcomment
+		where bnum=#{bnum}
+		order by cnum
+	</select>
+
+</mapper>
